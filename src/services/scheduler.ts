@@ -14,16 +14,14 @@ export class InvestmentScheduler {
   }
 
   private initializeScheduler() {
-    // Run every minute to check for matured investments
     cron.schedule("* * * * *", async () => {
       try {
         const now = new Date();
-        const maturedInvestments = await prisma.investment.findMany({
+        const maturedInvestments = await prisma.deposit.findMany({
           where: {
-            maturityAt: {
+            updatedAt: {
               lte: now,
             },
-            // Add a status field to track if settlement has been processed
             status: "ACTIVE",
           },
         });
@@ -39,13 +37,7 @@ export class InvestmentScheduler {
 
   private async processMaturedInvestment(investment: any) {
     try {
-      // TODO: Implement settlement logic with Solana program
-      // 1. Create settlement transaction
-      // 2. Send transaction to Solana network
-      // 3. Update investment status in database
-
-      // For now, just mark as processed
-      await prisma.investment.update({
+      await prisma.deposit.update({
         where: { id: investment.id },
         data: { status: "SETTLED" },
       });

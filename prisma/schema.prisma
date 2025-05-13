@@ -7,63 +7,58 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Payment {
-  id           String   @id @default(uuid())
-  userId       String
-  amount       Decimal  @db.Decimal(20, 8)
-  actualAmount Decimal  @db.Decimal(20, 8)
-  discountRate Decimal  @db.Decimal(5, 4)
-  txSignature  String
-  paidAt       DateTime
-  paidPlace    String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  productId    String
-  product      Product  @relation(fields: [productId], references: [id])
-
-  @@index([productId], map: "Payment_productId_fkey")
+model Vault {
+  id            String    @id @default(uuid())
+  name          String
+  tokenName     String
+  currentAmount Int
+  targetAmount  Int
+  expectedYield Decimal   @db.Decimal(5, 4)
+  lockup        Int
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deposits      Deposit[]
 }
 
-model Investment {
-  id            String   @id @default(uuid())
-  userId        String
-  amount        Decimal  @db.Decimal(20, 8)
-  investedAt    DateTime
-  maturityAt    DateTime
-  expectedYield Decimal  @db.Decimal(5, 4)
-  txSignature   String
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  productId     String
-  status        String   @default("ACTIVE")
-  product       Product  @relation(fields: [productId], references: [id])
-
-  @@index([productId], map: "Investment_productId_fkey")
+model Token {
+  id           String     @id @default(uuid())
+  token        String     @unique
+  tokenAddress String
+  discountRate Decimal    @db.Decimal(5, 4)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  purchases    Purchase[]
 }
 
-model TokenRate {
-  id           String   @id @default(uuid())
-  token        String   @unique
-  discountRate Decimal  @db.Decimal(5, 4)
-  interestRate Decimal  @db.Decimal(5, 4)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+model Deposit {
+  id              String   @id @default(uuid())
+  userId          String
+  vaultId         String
+  amount          Int
+  currentAmount   Int
+  transactionHash String   @unique
+  status          String   @default("pending")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  vault           Vault    @relation(fields: [vaultId], references: [id])
+
+  @@index([userId])
+  @@index([vaultId])
 }
 
-model Product {
-  id           String       @id @default(uuid())
-  name         String       @unique
-  symbol       String       @unique
-  title        String
-  description  String       @db.Text
-  price        Decimal      @db.Decimal(20, 8)
-  discountRate Decimal      @db.Decimal(5, 4)
-  interestRate Decimal      @db.Decimal(5, 4)
-  minAmount    Decimal      @db.Decimal(20, 8)
-  maxAmount    Decimal      @db.Decimal(20, 8)
-  isActive     Boolean      @default(true)
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
-  investments  Investment[]
-  payments     Payment[]
+model Purchase {
+  id              String   @id @default(uuid())
+  userId          String
+  tokenId         String
+  amount          Float
+  discountRate    Int
+  memo            String
+  transactionHash String   @unique
+  status          String   @default("pending")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  token           Token    @relation(fields: [tokenId], references: [id])
+
+  @@index([userId])
+  @@index([tokenId])
 }
